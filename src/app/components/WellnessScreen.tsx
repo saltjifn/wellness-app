@@ -20,7 +20,7 @@ function getWeatherThought(tempC: number): string {
 
 export function WellnessScreen() {
   const { weather, loading } = useWeather();
-  const { advice, loading: adviceLoading, error: adviceError } = useWellnessAdvice(weather);
+  const { advice, loading: adviceLoading, error: adviceError, retry } = useWellnessAdvice(weather);
 
   if (loading) {
     return (
@@ -107,10 +107,19 @@ export function WellnessScreen() {
                   {advice ?? "—"}
                 </p>
                 {adviceError && (
-                  <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                    Совет сгенерирован по шаблону: {adviceError}
-                  </p>
+                  <div className="mt-2 space-y-2">
+                    <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                      Совет по шаблону: {adviceError}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={retry}
+                      className="text-xs px-3 py-1.5 rounded-lg bg-purple-500 text-white hover:bg-purple-600"
+                    >
+                      Повторить
+                    </button>
+                  </div>
                 )}
               </>
             )}

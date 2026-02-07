@@ -32,7 +32,10 @@ export function useWellnessAdvice(weather: WeatherData | null) {
   const [advice, setAdvice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const lastKeyRef = useRef<string | null>(null);
+
+  const retry = () => setRetryCount((c) => c + 1);
 
   useEffect(() => {
     if (!weather) {
@@ -43,7 +46,7 @@ export function useWellnessAdvice(weather: WeatherData | null) {
     }
 
     const key = `${weather.location.name}-${weather.current.temp_c}-${weather.current.humidity}`;
-    if (lastKeyRef.current === key) return;
+    if (retryCount === 0 && lastKeyRef.current === key) return;
     lastKeyRef.current = key;
     setAdvice(null);
     setError(null);
@@ -90,12 +93,18 @@ export function useWellnessAdvice(weather: WeatherData | null) {
       })
       .catch((err) => {
         if (cancelled) return;
-        const msg =
-          err instanceof Error
-            ? (err.name === 'AbortError'
-                ? 'Сервер долго не отвечает (до 65 сек). Проверь интернет или подожди — Render может «просыпаться».'
-                : err.message)
-            : 'Ошибка запроса';
+        let msg: string;
+        if (err instanceof Error) {
+          if (err.name === 'AbortError') {
+            msg = 'Сервер долго не отвечает (до 65 сек). Проверь интернет или подожди — Render может «просыпаться».';
+          } else if (err.message === 'Failed to fetch' || err.message?.includes('fetch')) {
+            msg = 'Нет доступа к интернету. Проверь Wi‑Fi или мобильные данные и нажми «Повторить».';
+          } else {
+            msg = err.message;
+          }
+        } else {
+          msg = 'Ошибка запроса';
+        }
         setError(msg);
         setAdvice(FALLBACK_ADVICE);
       })
@@ -106,11 +115,12 @@ export function useWellnessAdvice(weather: WeatherData | null) {
     return () => {
       cancelled = true;
     };
-  }, [weather]);
+  }, [weather, retryCount]);
 
   return {
     advice: advice ?? (error ? FALLBACK_ADVICE : null),
     loading,
     error,
+    retry,
   };
 }

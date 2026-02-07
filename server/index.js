@@ -3,7 +3,8 @@ import express from 'express';
 import cors from 'cors';
 
 const app = express();
-app.use(cors());
+// Для APK (Capacitor): origin может быть capacitor://localhost
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
 // Проверка: открой http://localhost:3001/api/health в браузере
