@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import type { WeatherData } from './useWeather';
 
-const REQUEST_TIMEOUT_MS = 35_000;
+// Render free tier «засыпает» — первый запрос может идти до 60 сек
+const REQUEST_TIMEOUT_MS = 65_000;
 
 const FALLBACK_ADVICE =
   'Погодные условия могут влиять на самочувствие. Следите за давлением, влажностью и перепадами температуры. При недомогании обратитесь к врачу.';
@@ -92,7 +93,7 @@ export function useWellnessAdvice(weather: WeatherData | null) {
         const msg =
           err instanceof Error
             ? (err.name === 'AbortError'
-                ? 'Ответ не пришёл за 35 сек. Проверь интернет.'
+                ? 'Сервер долго не отвечает (до 65 сек). Проверь интернет или подожди — Render может «просыпаться».'
                 : err.message)
             : 'Ошибка запроса';
         setError(msg);

@@ -99,7 +99,7 @@ export function WellnessScreen() {
             </h3>
             {adviceLoading && !advice ? (
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Загружаем совет от ИИ… обычно до 30 сек. Если дольше — покажем подсказку.
+                Загружаем совет от ИИ… первый раз может до 60 сек (сервер «просыпается»).
                 </p>
             ) : (
               <>

@@ -73,8 +73,12 @@ app.post('/api/wellness-advice', async (req, res) => {
 
     const data = await response.json();
     const content = data?.choices?.[0]?.message?.content?.trim();
+    const fallback =
+      'Погодные условия могут влиять на самочувствие. Следите за давлением, влажностью и перепадами температуры. При недомогании обратитесь к врачу.';
+
     if (!content) {
-      return res.status(502).json({ error: 'Пустой ответ модели.' });
+      console.warn('[wellness] Upstage вернул пустой ответ:', JSON.stringify(data).slice(0, 300));
+      return res.json({ advice: fallback });
     }
 
     return res.json({ advice: content });
