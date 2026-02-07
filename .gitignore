@@ -1,0 +1,16 @@
+# Зависимости
+node_modules/
+
+# Сборка
+dist/
+
+# Секреты (ключи API)
+.env
+
+# Логи
+*.log
+npm-debug.log*
+
+# Кэш
+.vite/
+.cache/
