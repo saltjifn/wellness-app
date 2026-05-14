@@ -3,16 +3,15 @@ import express from 'express';
 import cors from 'cors';
 
 const app = express();
-// Для APK (Capacitor): origin может быть capacitor://localhost
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
-// Проверка: открой http://localhost:3001/api/health в браузере
 app.get('/api/health', (req, res) => res.json({ ok: true, msg: 'Server running' }));
 
-// Модели: https://console.upstage.ai/docs/models
-const UPSTAGE_URL = 'https://api.upstage.ai/v1/chat/completions';
-const UPSTAGE_MODEL = process.env.UPSTAGE_MODEL || 'solar-pro3-260126';
+// OpenRouter: https://openrouter.ai/docs
+const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const OPENROUTER_MODEL =
+  process.env.OPENROUTER_MODEL || 'google/gemma-4-31b-it:free';
 
 function buildPrompt(weather) {
   const { location, current, astronomy } = weather;
@@ -36,10 +35,10 @@ app.all('/api/wellness-advice', (req, res, next) => {
 });
 
 app.post('/api/wellness-advice', async (req, res) => {
-  const apiKey = process.env.UPSTAGE_API_KEY;
+  const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     return res.status(503).json({
-      error: 'UPSTAGE_API_KEY не задан. В .env добавь: UPSTAGE_API_KEY=up_...',
+      error: 'OPENROUTER_API_KEY не задан. В .env: OPENROUTER_API_KEY=sk-or-v1-...',
     });
   }
 
@@ -51,24 +50,26 @@ app.post('/api/wellness-advice', async (req, res) => {
   const userPrompt = buildPrompt(weather);
 
   try {
-    const response = await fetch(UPSTAGE_URL, {
+    const response = await fetch(OPENROUTER_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
+        'HTTP-Referer': process.env.OPENROUTER_HTTP_REFERER || 'https://localhost',
+        'X-Title': 'Wellness Weather App',
       },
       body: JSON.stringify({
-        model: UPSTAGE_MODEL,
+        model: OPENROUTER_MODEL,
         messages: [{ role: 'user', content: userPrompt }],
       }),
     });
 
     if (!response.ok) {
       const errText = await response.text();
-      let message = `Upstage error: ${response.status}`;
+      let message = `OpenRouter: ${response.status}`;
       if (response.status === 429) message = 'Превышен лимит запросов. Попробуй позже.';
-      else if (response.status === 401) message = 'Неверный API-ключ Upstage.';
-      else if (errText) message = errText.slice(0, 200);
+      else if (response.status === 401) message = 'Неверный API-ключ OpenRouter.';
+      else if (errText) message = errText.slice(0, 300);
       return res.status(response.status >= 500 ? 502 : response.status).json({ error: message });
     }
 
@@ -78,7 +79,7 @@ app.post('/api/wellness-advice', async (req, res) => {
       'Погодные условия могут влиять на самочувствие. Следите за давлением, влажностью и перепадами температуры. При недомогании обратитесь к врачу.';
 
     if (!content) {
-      console.warn('[wellness] Upstage вернул пустой ответ:', JSON.stringify(data).slice(0, 300));
+      console.warn('[wellness] OpenRouter пустой ответ:', JSON.stringify(data).slice(0, 400));
       return res.json({ advice: fallback });
     }
 

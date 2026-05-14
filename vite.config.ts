@@ -4,9 +4,10 @@ import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
-// Модели: https://console.upstage.ai/docs/models
-const UPSTAGE_URL = 'https://api.upstage.ai/v1/chat/completions'
-const UPSTAGE_MODEL = process.env.UPSTAGE_MODEL || 'solar-pro3-260126'
+// OpenRouter (локальный dev): https://openrouter.ai/docs
+const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
+const OPENROUTER_MODEL =
+  process.env.OPENROUTER_MODEL || 'google/gemma-4-31b-it:free'
 
 function wellnessApiPlugin() {
   return {
@@ -30,11 +31,11 @@ function wellnessApiPlugin() {
               res.end(JSON.stringify({ error: 'Нужны данные погоды (weather).' }))
               return
             }
-            const apiKey = process.env.UPSTAGE_API_KEY
+            const apiKey = process.env.OPENROUTER_API_KEY
             if (!apiKey) {
               res.statusCode = 503
               res.setHeader('Content-Type', 'application/json')
-              res.end(JSON.stringify({ error: 'UPSTAGE_API_KEY не задан в .env' }))
+              res.end(JSON.stringify({ error: 'OPENROUTER_API_KEY не задан в .env' }))
               return
             }
             const { location, current, astronomy } = weather
@@ -50,14 +51,16 @@ function wellnessApiPlugin() {
 - Фаза луны: ${astronomy.moon_phase}
 
 Напиши только текст совета, без заголовков и лишнего.`;
-            const response = await fetch(UPSTAGE_URL, {
+            const response = await fetch(OPENROUTER_URL, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${apiKey}`,
+                'HTTP-Referer': process.env.OPENROUTER_HTTP_REFERER || 'https://localhost',
+                'X-Title': 'Wellness Weather App',
               },
               body: JSON.stringify({
-                model: UPSTAGE_MODEL,
+                model: OPENROUTER_MODEL,
                 messages: [{ role: 'user', content: prompt }],
               }),
             })
@@ -65,15 +68,16 @@ function wellnessApiPlugin() {
             if (!response.ok) {
               res.statusCode = 502
               res.setHeader('Content-Type', 'application/json')
-              res.end(JSON.stringify({ error: text.slice(0, 200) || `Upstage ${response.status}` }))
+              res.end(JSON.stringify({ error: text.slice(0, 200) || `OpenRouter ${response.status}` }))
               return
             }
             const data = JSON.parse(text)
             const content = data?.choices?.[0]?.message?.content?.trim()
             if (!content) {
-              res.statusCode = 502
+              const fallback =
+                'Погодные условия могут влиять на самочувствие. Следите за давлением, влажностью и перепадами температуры. При недомогании обратитесь к врачу.'
               res.setHeader('Content-Type', 'application/json')
-              res.end(JSON.stringify({ error: 'Пустой ответ модели' }))
+              res.end(JSON.stringify({ advice: fallback }))
               return
             }
             res.setHeader('Content-Type', 'application/json')

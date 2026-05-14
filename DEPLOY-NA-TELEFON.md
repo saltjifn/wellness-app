@@ -57,8 +57,8 @@
 
 | Key | Value |
 |-----|-------|
-| `UPSTAGE_API_KEY` | `up_A4G6RO33pt2vDuwo19AUWihoPXSvz` (твой ключ из .env) |
-| `UPSTAGE_MODEL` | `solar-pro3-260126` (если нужно) |
+| `OPENROUTER_API_KEY` | ключ вида `sk-or-v1-...` с [openrouter.ai/keys](https://openrouter.ai/keys) |
+| `OPENROUTER_MODEL` | по желанию, например `google/gemma-4-31b-it:free` (иначе возьмётся дефолт из кода) |
 
 Нажми **Add**.
 
